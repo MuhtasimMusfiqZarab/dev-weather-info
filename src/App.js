@@ -22,15 +22,15 @@ class App extends Component {
     let latitude;
     let longitude;
     //try to fetch current location
-    const success = position => {
+    const success = async position => {
       latitude = position.coords.latitude;
       longitude = position.coords.longitude;
       console.log(latitude, longitude);
-      //saving current position to state
-      this.setState({
-        lat: latitude,
-        long: longitude
-      });
+
+      //fetching and saving current location weather
+      const api_call = await this.getWeather(latitude, longitude);
+      const data = await api_call.json();
+      this.dataToState(data, latitude, longitude);
     };
 
     function error() {
@@ -38,18 +38,21 @@ class App extends Component {
     }
 
     if (!navigator.geolocation) {
-      /* geolocation is available */
       console.log("geolocation is not supported by the browser");
     } else {
-      /* geolocation IS NOT available */
       navigator.geolocation.getCurrentPosition(success, error);
     }
   }
 
+  getWeather = async (lat, long) => {
+    return await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${long}&appid=${API_KEY}`
+    );
+  };
+
   fetchWeather = async e => {
     let lat;
     let long;
-    let api_call;
 
     //defining latitute and longitude for cities
     switch (e.target.value) {
@@ -78,11 +81,14 @@ class App extends Component {
         break;
     }
 
-    api_call = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${long}&appid=${API_KEY}`
-    );
+    const api_call = await this.getWeather(lat, long);
 
     const data = await api_call.json();
+    this.dataToState(data, lat, long);
+  };
+
+  //saving the response data to state
+  dataToState = (data, lat, long) => {
     if (lat && long) {
       console.log(data);
       this.setState({
